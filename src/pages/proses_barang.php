@@ -13,6 +13,27 @@ if ($_POST['aksi'] == 'tambah') {
                      VALUES ('$nama', '$kode', '$stok', '$lokasi', '$keadaan')");
 }
 
+//tampil dashboard
+if ($_POST['aksi'] == 'tampil_dashboard') {
+    $result = $coon->query("SELECT * FROM barang ORDER BY id DESC");
+
+    echo '<table class="table table-bordered table-sm mt-3">';
+    echo '<thead><tr><th>Nama</th><th>Kode</th><th>Stok</th><th>Lokasi</th><th>Keadaan</th></tr></thead><tbody>';
+    while ($row = $result->fetch_assoc()) {
+        echo "<tr>
+                <td>{$row['nama_barang']}</td>
+                <td>{$row['kode_barang']}</td>
+                <td>{$row['stok_barang']}</td>
+                <td>{$row['lokasi']}</td>
+                <td>{$row['keadaan']}</td>
+              </tr>";
+    }
+    echo '</tbody></table>';
+}
+
+
+
+
 // Tampil semua barang
 if ($_POST['aksi'] == 'tampil') {
     $result = $coon->query("SELECT * FROM barang ORDER BY id DESC");
@@ -27,9 +48,9 @@ if ($_POST['aksi'] == 'tampil') {
                 <td>{$row['lokasi']}</td>
                 <td>{$row['keadaan']}</td>
                 <td>
-                  <button class='btn btn-sm btn-warning editBarang' data-id='{$row['id']}'>Edit</button>
-                  <button class='btn btn-sm btn-danger hapusBarang' data-id='{$row['id']}'>Hapus</button>
-                  <button class='btn btn-sm btn-primary printBarang' data-id='{$row['id']}'>Print</button>
+                  <button class='btn btn-sm btn-warning editBarang' data-id='{$row['id']}'>✏️ Edit</button>
+                  <button class='btn btn-sm btn-danger hapusBarang' data-id='{$row['id']}'>🗑️ Hapus</button>
+                  <button class='btn btn-sm btn-info printBarang' data-id='{$row['id']}'>🖨️ Print</button>
                 </td>
               </tr>";
     }
@@ -68,6 +89,60 @@ if ($_POST['aksi'] == 'hapus') {
     $coon->query("DELETE FROM barang WHERE id = $id");
 }
 
+
+
+
+//cari dashboard
+if ($_POST['aksi'] == 'cari_dashboard') {
+    $keyword = $_POST['keyword'];
+    $result = $coon->query("SELECT * FROM barang 
+      WHERE nama_barang LIKE '%$keyword%' 
+      OR kode_barang LIKE '%$keyword%' 
+      OR lokasi LIKE '%$keyword%' 
+      ORDER BY id DESC");
+
+    echo '<table class="table table-bordered table-sm mt-3">';
+    echo '<thead><tr><th>Nama</th><th>Kode</th><th>Stok</th><th>Lokasi</th></tr></thead><tbody>';
+    while ($row = $result->fetch_assoc()) {
+        echo "<tr>
+                <td>{$row['nama_barang']}</td>
+                <td>{$row['kode_barang']}</td>
+                <td>{$row['stok_barang']}</td>
+                <td>{$row['lokasi']}</td>
+                <td>{$row['keadaan']}</td>
+              </tr>";
+    }
+    echo '</tbody></table>';
+}
+
+if ($_POST['aksi'] == 'cari') {
+    $keyword = $_POST['keyword'];
+    $result = $coon->query("SELECT * FROM barang 
+      WHERE nama_barang LIKE '%$keyword%' 
+      OR kode_barang LIKE '%$keyword%' 
+      OR lokasi LIKE '%$keyword%' 
+      ORDER BY id DESC");
+
+    echo '<table class="table table-bordered table-sm mt-3">';
+    echo '<thead><tr><th>Nama</th><th>Kode</th><th>Stok</th><th>Lokasi</th><th>Keadaan</th><th>Aksi</th></tr></thead><tbody>';
+    while ($row = $result->fetch_assoc()) {
+        echo "<tr>
+                <td>{$row['nama_barang']}</td>
+                <td>{$row['kode_barang']}</td>
+                <td>{$row['stok_barang']}</td>
+                <td>{$row['lokasi']}</td>
+                <td>{$row['keadaan']}</td>
+                <td>
+                  <button class='btn btn-sm btn-warning editBarang' data-id='{$row['id']}'>✏️ Edit</button>
+                  <button class='btn btn-sm btn-danger hapusBarang' data-id='{$row['id']}'>🗑️ Hapus</button>
+                  <button class='btn btn-sm btn-info printBarang' data-id='{$row['id']}'>🖨️ Print</button>
+                </td>
+              </tr>";
+    }
+    echo '</tbody></table>';
+}
+
+//print satu data
 if ($_POST['aksi'] == 'print') {
     $id = $_POST['id'];
     $q = $coon->query("SELECT * FROM barang WHERE id = $id");
@@ -80,4 +155,118 @@ if ($_POST['aksi'] == 'print') {
     echo "<p>Lokasi: {$data['lokasi']}</p>";
     echo "<p>Keadaan: {$data['keadaan']}</p>";
 }
-?>
+
+//PRINT SEMUA
+if ($_POST['aksi'] == 'print_semua') {
+    $result = $coon->query("SELECT * FROM barang ORDER BY id DESC");
+
+    echo '<table>';
+    echo '<thead><tr><th>No</th><th>Nama</th><th>Kode</th><th>Stok</th><th>Lokasi</th><th>Keadaan</th></tr></thead><tbody>';
+    $no = 1;
+    while ($row = $result->fetch_assoc()) {
+        echo "<tr>
+                <td>{$no}</td>
+                <td>{$row['nama_barang']}</td>
+                <td>{$row['kode_barang']}</td>
+                <td>{$row['stok_barang']}</td>
+                <td>{$row['lokasi']}</td>
+                <td>{$row['keadaan']}</td>
+              </tr>";
+        $no++;
+    }
+    echo '</tbody></table>';
+}
+
+//pagination dashboard
+if ($_POST['aksi'] == 'pagination_dashboard') {
+    $limit = intval($_POST['limit']);
+    $page = intval($_POST['page']);
+    $keyword = $_POST['keyword'] ?? '';
+
+    $offset = ($page - 1) * $limit;
+
+    $where = "";
+    if ($keyword != '') {
+        $where = "WHERE nama_barang LIKE '%$keyword%' OR kode_barang LIKE '%$keyword%' OR lokasi LIKE '%$keyword%'";
+    }
+
+    $total = $coon->query("SELECT COUNT(*) as total FROM barang $where")->fetch_assoc()['total'];
+    $result = $coon->query("SELECT * FROM barang $where ORDER BY id DESC LIMIT $limit OFFSET $offset");
+
+    $html = '<table class="table table-bordered table-sm mt-3">';
+    $html .= '<thead><tr><th>Nama</th><th>Kode</th><th>Stok</th><th>Lokasi</th></tr></thead><tbody>';
+    while ($row = $result->fetch_assoc()) {
+        $html .= "<tr>
+                <td>{$row['nama_barang']}</td>
+                <td>{$row['kode_barang']}</td>
+                <td>{$row['stok_barang']}</td>
+                <td>{$row['lokasi']}</td>
+                <td>{$row['keadaan']}</td>
+              </tr>";
+    }
+    $html .= '</tbody></table>';
+
+    // Buat pagination
+    $totalPages = ceil($total / $limit);
+    $pagination = '<nav><ul class="pagination">';
+    for ($i = 1; $i <= $totalPages; $i++) {
+        $active = ($i == $page) ? 'active' : '';
+        $pagination .= "<li class='page-item $active'><a href='#' class='page-link' data-page='$i'>$i</a></li>";
+    }
+    $pagination .= '</ul></nav>';
+
+    echo json_encode([
+        'data' => $html,
+        'pagination' => $pagination
+    ]);
+}
+
+
+//pagination kelola
+if ($_POST['aksi'] == 'pagination') {
+    $limit = intval($_POST['limit']);
+    $page = intval($_POST['page']);
+    $keyword = $_POST['keyword'] ?? '';
+
+    $offset = ($page - 1) * $limit;
+
+    $where = "";
+    if ($keyword != '') {
+        $where = "WHERE nama_barang LIKE '%$keyword%' OR kode_barang LIKE '%$keyword%' OR lokasi LIKE '%$keyword%'";
+    }
+
+    $total = $coon->query("SELECT COUNT(*) as total FROM barang $where")->fetch_assoc()['total'];
+    $result = $coon->query("SELECT * FROM barang $where ORDER BY id DESC LIMIT $limit OFFSET $offset");
+
+    $html = '<table class="table table-bordered table-sm mt-3">';
+    $html .= '<thead><tr><th>Nama</th><th>Kode</th><th>Stok</th><th>Lokasi</th><th>Keadaan</th><th>Aksi</th></tr></thead><tbody>';
+    while ($row = $result->fetch_assoc()) {
+        $html .= "<tr>
+                <td>{$row['nama_barang']}</td>
+                <td>{$row['kode_barang']}</td>
+                <td>{$row['stok_barang']}</td>
+                <td>{$row['lokasi']}</td>
+                <td>{$row['keadaan']}</td>
+                <td>
+                  <button class='btn btn-sm btn-warning editBarang' data-id='{$row['id']}'>✏️ Edit</button>
+                  <button class='btn btn-sm btn-danger hapusBarang' data-id='{$row['id']}'>🗑️ Hapus</button>
+                  <button class='btn btn-sm btn-info printBarang' data-id='{$row['id']}'>🖨️ Print</button>
+                </td>
+              </tr>";
+    }
+    $html .= '</tbody></table>';
+
+    // Buat pagination
+    $totalPages = ceil($total / $limit);
+    $pagination = '<nav><ul class="pagination">';
+    for ($i = 1; $i <= $totalPages; $i++) {
+        $active = ($i == $page) ? 'active' : '';
+        $pagination .= "<li class='page-item $active'><a href='#' class='page-link' data-page='$i'>$i</a></li>";
+    }
+    $pagination .= '</ul></nav>';
+
+    echo json_encode([
+        'data' => $html,
+        'pagination' => $pagination
+    ]);
+}
