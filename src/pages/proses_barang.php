@@ -10,9 +10,28 @@ if ($_POST['aksi'] == 'tambah') {
     $lokasi = $_POST['lokasi'];
     $keadaan = $_POST['keadaan'];
 
-    $coon->query("INSERT INTO barang (nama_barang, kode_barang, stok_barang, lokasi, keadaan) 
-                     VALUES ('$nama', '$kode', '$stok', '$lokasi', '$keadaan')");
+    // Handle upload gambar
+    $gambar = 'uploads/No-Image.jpg';
+    if (isset($_FILES['gambar_barang']) && $_FILES['gambar_barang']['error'] === 0) {
+        $targetDir = "uploads/";
+        if (!file_exists($targetDir)) {
+            mkdir($targetDir, 0777, true);
+        }
+
+        $fileName = basename($_FILES["gambar_barang"]["name"]);
+        $fileExt = pathinfo($fileName, PATHINFO_EXTENSION);
+        $newFileName = uniqid() . '.' . $fileExt;
+        $targetFile = $targetDir . $newFileName;
+
+        if (move_uploaded_file($_FILES["gambar_barang"]["tmp_name"], $targetFile)) {
+            $gambar = $targetFile;
+        }
+    }
+
+    $coon->query("INSERT INTO barang (nama_barang, kode_barang, stok_barang, lokasi, keadaan, gambar_barang) 
+                  VALUES ('$nama', '$kode', '$stok', '$lokasi', '$keadaan', '$gambar')");
 }
+
 
 // Update barang
 if ($_POST['aksi'] == 'update') {
@@ -23,15 +42,42 @@ if ($_POST['aksi'] == 'update') {
     $lokasi = $_POST['lokasi'];
     $keadaan = $_POST['keadaan'];
 
+    // Ambil data lama (untuk hapus gambar lama jika diganti)
+    $oldData = $coon->query("SELECT gambar_barang FROM barang WHERE id = $id")->fetch_assoc();
+    $gambar_lama = $oldData['gambar_barang'];
+    $gambar_baru = $gambar_lama;
+
+    if (isset($_FILES['gambar_baru']) && $_FILES['gambar_baru']['error'] === 0) {
+        $targetDir = "uploads/";
+        if (!file_exists($targetDir)) {
+            mkdir($targetDir, 0777, true);
+        }
+
+        $fileName = basename($_FILES["gambar_baru"]["name"]);
+        $fileExt = pathinfo($fileName, PATHINFO_EXTENSION);
+        $newFileName = uniqid() . '.' . $fileExt;
+        $targetFile = $targetDir . $newFileName;
+
+        if (move_uploaded_file($_FILES["gambar_baru"]["tmp_name"], $targetFile)) {
+            // Hapus gambar lama jika ada
+            if (file_exists($gambar_lama) && !empty($gambar_lama) && $gambar_lama !== 'uploads/No-Image.jpg') {
+                unlink($gambar_lama);
+            }            
+            $gambar_baru = $targetFile;
+        }
+    }
+
     $coon->query("UPDATE barang SET 
         nama_barang='$nama', 
         kode_barang='$kode', 
         stok_barang='$stok',
         lokasi='$lokasi',
-        keadaan='$keadaan'
+        keadaan='$keadaan',
+        gambar_barang='$gambar_baru'
         WHERE id=$id
     ");
 }
+
 //update (modal)
 if ($_POST['aksi'] == 'get') {
     $id = $_POST['id'];
@@ -42,24 +88,38 @@ if ($_POST['aksi'] == 'get') {
 // Hapus barang
 if ($_POST['aksi'] == 'hapus') {
     $id = $_POST['id'];
+
+    // Ambil path gambar
+    $data = $coon->query("SELECT gambar_barang FROM barang WHERE id = $id")->fetch_assoc();
+    $gambar = $data['gambar_barang'];
+
+    // Hapus data dari database
     $coon->query("DELETE FROM barang WHERE id = $id");
+
+    // Hapus file jika bukan gambar default
+    if ($gambar !== 'uploads/No-Image.jpg' && file_exists($gambar)) {
+        unlink($gambar);
+    }
 }
 
 //function untuk render tabel barang
-function render_table_barang($result, $with_action = false) {
+function render_table_barang($result, $with_action = false)
+{
     $html = '<table class="table table-bordered table-sm mt-3">';
-    $html .= '<thead><tr><th>Nama</th><th>Kode</th><th>Stok</th><th>Lokasi</th><th>Keadaan</th>';
+    $html .= '<thead><tr><th>Gambar</th><th>Nama</th><th>Kode</th><th>Stok</th><th>Lokasi</th><th>Keadaan</th>';
     if ($with_action) $html .= '<th>Aksi</th>';
     $html .= '</tr></thead><tbody>';
 
     while ($row = $result->fetch_assoc()) {
         $html .= "<tr>
-            <td>{$row['nama_barang']}</td>
-            <td>{$row['kode_barang']}</td>
-            <td>{$row['stok_barang']}</td>
-            <td>{$row['lokasi']}</td>
-            <td>{$row['keadaan']}</td>";
-        
+    <td><img src='{$row['gambar_barang']}' style='width: 100px; height: 100px; object-fit: cover;'></td>
+    <td>{$row['nama_barang']}</td>
+    <td>{$row['kode_barang']}</td>
+    <td>{$row['stok_barang']}</td>
+    <td>{$row['lokasi']}</td>
+    <td>{$row['keadaan']}</td>";
+
+
         if ($with_action) {
             $html .= "<td>
                 <button class='btn btn-sm btn-warning editBarang' data-id='{$row['id']}'>✏️ Edit</button>

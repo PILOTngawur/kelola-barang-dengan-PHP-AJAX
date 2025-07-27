@@ -25,7 +25,6 @@ if (!$_SESSION['id_user']) {
 
     <div class="container-fluid" style="margin-top: 30px;">
         <div class="row">
-            <!-- Sidebar -->
             <div class="col-md-3 mb-3">
                 <div class="list-group">
                     <a href="dashboard.php" class="list-group-item list-group-item-action">🏠 Dashboard</a>
@@ -33,19 +32,18 @@ if (!$_SESSION['id_user']) {
                     <a href="" class="list-group-item list-group-item-action">---</a>
                 </div>
             </div>
-
-            <!-- Konten utama -->
+            
             <div class="col-md-9">
-                <!-- Tambah Barang -->
                 <div class="card mb-3">
                     <div class="card-body">
                         <h5>Tambah Barang</h5>
-                        <form id="formBarang">
+                        <form id="formBarang" enctype="multipart/form-data">
                             <div class="form-row">
+
                                 <div class="form-group col-md-4">
                                     <input type="text" name="nama_barang" class="form-control" placeholder="Nama Barang" required>
                                 </div>
-                                <div class="form-group col-md-4">
+                                <div class="form-group col-md-2">
                                     <input type="text" name="kode_barang" class="form-control" placeholder="Kode Barang" maxlength="11" required>
                                 </div>
                                 <div class="form-group col-md-2">
@@ -59,14 +57,20 @@ if (!$_SESSION['id_user']) {
                                         <option value="hilang">Hilang</option>
                                     </select>
                                 </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group col-md-6">
+                                <div class="form-group col-md-2">
                                     <input type="text" name="lokasi" class="form-control" placeholder="Lokasi" required>
                                 </div>
-                                <div class="form-group col-md-6">
+                                <div class="col-mb-2">
+                                    <h6>Masukan Gambar Barang</h6>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <input class="form-control" type="file" name="gambar_barang" id="formFile">
+                                </div>
+                                <div class="form-group col-md-5">
                                     <button type="submit" class="btn btn-primary">💾 Simpan</button>
                                 </div>
+                            </div>
+                            <div class="form-row">
                             </div>
                         </form>
                     </div>
@@ -76,13 +80,11 @@ if (!$_SESSION['id_user']) {
                 <div class="card mb-3">
                     <div class="card-body">
                         <h5>Data Barang</h5>
-
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <input type="text" id="cariBarang" class="form-control mr-2" placeholder="🔍 Cari barang..." style="max-width: 400px;">
                             <button class="btn btn-info" id="printSemua">🖨️ Print Semua Barang</button>
                         </div>
                         <div id="tampilBarang">Loading...</div>
-
                         <div class="d-flex justify-content-between align-items-center mt-2">
                             <div>
                                 <label>Tampilkan
@@ -95,7 +97,6 @@ if (!$_SESSION['id_user']) {
                                     data per halaman</label>
                             </div>
                             <div id="pagination"></div>
-
                         </div>
                     </div>
                 </div>
@@ -105,7 +106,7 @@ if (!$_SESSION['id_user']) {
 
         <div class="modal fade" id="modalEdit" tabindex="-1" role="dialog">
             <div class="modal-dialog" role="document">
-                <form id="formEditBarang">
+                <form id="formEditBarang" enctype="multipart/form-data">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">✏️ Edit Barang</h5>
@@ -114,18 +115,38 @@ if (!$_SESSION['id_user']) {
                         <div class="modal-body">
                             <input type="hidden" name="id_barang" id="edit_id">
                             <div class="form-group">
+                                <label>Ganti Gambar Barang</label>
+                                <input type="file" name="gambar_baru" id="edit_gambar" class="form-control">
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-md-6">
+                                    <label>Gambar Sekarang:</label><br>
+                                    <img id="previewEditGambar" src="" style="width:100px;height:100px;object-fit:cover;">
+                                </div>
+
+                                <div class="form-group col-md-6">
+                                    <label>Gambar Baru:</label><br>
+                                    <img id="previewBaru" src="" style="width:100px;height:100px;object-fit:cover; display: none;">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Nama</label>
                                 <input type="text" name="nama_barang" id="edit_nama" class="form-control" placeholder="Nama Barang" required>
                             </div>
                             <div class="form-group">
+                                <label>Kode Barang</label>
                                 <input type="text" name="kode_barang" id="edit_kode" class="form-control" placeholder="Kode Barang" maxlength="11" required>
                             </div>
                             <div class="form-group">
+                                <label>Stok</label>
                                 <input type="number" name="stok_barang" id="edit_stok" class="form-control" placeholder="Stok" required>
                             </div>
                             <div class="form-group">
+                                <label>Lokasi</label>
                                 <input type="text" name="lokasi" id="edit_lokasi" class="form-control" placeholder="Lokasi" required>
                             </div>
                             <div class="form-group">
+                                <label>Kondisi</label>
                                 <select name="keadaan" id="edit_keadaan" class="form-control" required>
                                     <option value="baik">Baik</option>
                                     <option value="rusak">Rusak</option>
@@ -154,11 +175,14 @@ if (!$_SESSION['id_user']) {
 
                 // Tambah Barang
                 $("#formBarang").on('submit', function(e) {
-                    e.preventDefault();
+                    let formData = new FormData(this);
+                    formData.append('aksi', 'tambah');
                     $.ajax({
                         url: 'proses_barang.php',
                         type: 'POST',
-                        data: $(this).serialize() + '&aksi=tambah',
+                        data: formData,
+                        contentType: false,
+                        processData: false,
                         success: function(response) {
                             $("#formBarang")[0].reset();
                             loadBarang();
@@ -169,6 +193,7 @@ if (!$_SESSION['id_user']) {
                             });
                         }
                     });
+
                 });
 
                 // Load data barang
@@ -204,10 +229,9 @@ if (!$_SESSION['id_user']) {
                     loadBarang(page, jumlah, keyword);
                 });
 
-                // Hapus Barang dengan Swal confirm
+                // Hapus Barang
                 $(document).on('click', '.hapusBarang', function() {
                     const id = $(this).data('id');
-
                     Swal.fire({
                         title: 'Yakin ingin menghapus?',
                         text: "Data yang dihapus tidak dapat dikembalikan!",
@@ -233,9 +257,10 @@ if (!$_SESSION['id_user']) {
                     });
                 });
 
-                // Buka modal edit
+                // Popup modal (edit)
                 $(document).on('click', '.editBarang', function() {
                     const id = $(this).data('id');
+
                     $.post('proses_barang.php', {
                         aksi: 'get',
                         id: id
@@ -247,17 +272,22 @@ if (!$_SESSION['id_user']) {
                         $('#edit_stok').val(data.stok_barang);
                         $('#edit_lokasi').val(data.lokasi);
                         $('#edit_keadaan').val(data.keadaan);
+                        $('#previewBaru').hide().attr('src', '');
+                        $('#previewEditGambar').attr('src', data.gambar_barang);
                         $('#modalEdit').modal('show');
                     });
                 });
 
                 // Submit form edit
                 $('#formEditBarang').submit(function(e) {
-                    e.preventDefault();
+                    let editData = new FormData(this);
+                    editData.append('aksi', 'update');
                     $.ajax({
                         url: 'proses_barang.php',
                         type: 'POST',
-                        data: $(this).serialize() + '&aksi=update',
+                        data: editData,
+                        contentType: false,
+                        processData: false,
                         success: function(res) {
                             $('#modalEdit').modal('hide');
                             loadBarang();
@@ -268,8 +298,10 @@ if (!$_SESSION['id_user']) {
                             });
                         }
                     });
+
                 });
 
+                // Cari Barang
                 $("#cariBarang").on("keyup", function() {
                     const keyword = $(this).val();
                     $.post("proses_barang.php", {
@@ -313,6 +345,17 @@ if (!$_SESSION['id_user']) {
                     });
                 });
 
+                // Preview gambar baru saat dipilih
+                $("#edit_gambar").on("change", function() {
+                    const file = this.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            $("#previewBaru").attr("src", e.target.result).show();
+                        }
+                        reader.readAsDataURL(file);
+                    }
+                });
             });
         </script>
 
